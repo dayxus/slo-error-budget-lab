@@ -1,0 +1,12 @@
+service: checkout
+description: Checkout API availability, the revenue path the team is on call for
+sli:
+  name: availability
+  unit: requests
+  good_query: sum(rate(http_requests_total{job="checkout",status!~"5.."}[5m]))
+  total_query: sum(rate(http_requests_total{job="checkout"}[5m]))
+objective: 0.999
+window: 30d
+labels:
+  team: platform
+  tier: "1"

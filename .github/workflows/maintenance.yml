@@ -1,0 +1,94 @@
+name: maintenance
+
+on:
+  schedule:
+    # Mondays, 06:23 UTC. The offset avoids the top-of-the-hour rush on the
+    # GitHub runners, where scheduled jobs can be queued for a long time.
+    - cron: "23 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  weekly-audit:
+    name: weekly audit (upstream versions, promtool, test suite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the package with its dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --editable ".[dev]"
+
+      - name: Sync the upstream version table
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/sync_upstream_versions.py
+
+      - name: Download the promtool of the release that was just recorded
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(grep -m1 '^| Prometheus ' docs/versions.md | awk -F'|' '{print $3}' | tr -d ' `')
+          echo "Validating against promtool ${VERSION}"
+          echo "PROMETHEUS_VERSION=${VERSION}" >> "$GITHUB_ENV"
+          python scripts/fetch_promtool.py --out build/tools/bin --version "${VERSION}"
+
+      - name: Generate the rules and validate them with promtool
+        id: promtool
+        continue-on-error: true
+        run: |
+          python -m sloctl rules generate --config examples/slo --out build/rules
+          build/tools/bin/promtool check rules build/rules/*.rules.yml 2>&1 | tee promtool.log
+
+      - name: Write the weekly audit report
+        run: |
+          python scripts/weekly_audit.py \
+            --promtool-status "${{ steps.promtool.outcome }}" \
+            --prometheus-version "${PROMETHEUS_VERSION}" \
+            --promtool-log promtool.log
+
+      - name: Commit the audit only when something really changed
+        run: |
+          git config user.name "Jeferson Melo"
+          git config user.email "161839842+dayxus@users.noreply.github.com"
+          git add docs/versions.md reports/weekly-audit.md
+          if git diff --cached --quiet; then
+            echo "no upstream change and no audit change: nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore(docs): sync upstream versions"
+          git push
+
+      - name: Open an issue when promtool rejects the generated rules
+        if: steps.promtool.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "The weekly maintenance run generated Prometheus rules that the release's own promtool rejected."
+            echo ""
+            echo "Release under test: \`${PROMETHEUS_VERSION}\`"
+            echo ""
+            echo "Literal output of \`promtool check rules\`:"
+            echo ""
+            echo '```text'
+            cat promtool.log
+            echo '```'
+            echo ""
+            echo "Reproduce locally with \`make promtool-check\`."
+          } > issue-body.md
+          gh issue create \
+            --title "promtool rejects generated rules (${PROMETHEUS_VERSION})" \
+            --body-file issue-body.md

@@ -1,0 +1,12 @@
+service: search
+description: Search API availability, a looser objective because a retried query is a cheaper failure
+sli:
+  name: availability
+  unit: requests
+  good_query: sum(rate(http_requests_total{job="search",status!~"5.."}[5m]))
+  total_query: sum(rate(http_requests_total{job="search"}[5m]))
+objective: 99.5%
+window: 30d
+labels:
+  team: search
+  tier: "2"

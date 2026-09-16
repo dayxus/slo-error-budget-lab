@@ -1,0 +1,90 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  lint-test:
+    name: lint-test (python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install the package with its dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --editable ".[dev]"
+      - name: Lint
+        run: |
+          python -m ruff check .
+          python -m ruff format --check .
+      - name: Test
+        run: python -m pytest -q
+      - name: Sample fixtures match a fresh generation
+        run: python scripts/make_fixtures.py --check
+
+  rules-are-valid:
+    name: rules-are-valid (newest promtool)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --editable ".[dev]"
+      - name: Download promtool from the newest Prometheus release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/fetch_promtool.py --out build/tools/bin
+      - name: Generate the rules for every example SLO
+        run: python -m sloctl rules generate --config examples/slo --out build/rules
+      - name: Validate the generated rules with promtool
+        run: build/tools/bin/promtool check rules build/rules/*.rules.yml
+
+  demo-report:
+    name: demo-report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --editable ".[dev]"
+      - name: Build the report and the Prometheus rules
+        run: make demo PY=python
+      - name: Upload the SLO report
+        uses: actions/upload-artifact@v4
+        with:
+          name: slo-report
+          path: reports/slo-report.md
+          if-no-files-found: error
+      - name: Upload the generated Prometheus rules
+        uses: actions/upload-artifact@v4
+        with:
+          name: prometheus-rules
+          path: build/rules/*.rules.yml
+          if-no-files-found: error

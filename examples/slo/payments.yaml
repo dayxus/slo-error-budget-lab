@@ -1,0 +1,12 @@
+service: payments
+description: Payments API availability, a five nines objective because every failed call is a lost charge
+sli:
+  name: availability
+  unit: requests
+  good_query: sum(rate(http_requests_total{job="payments-api",status!~"5.."}[5m]))
+  total_query: sum(rate(http_requests_total{job="payments-api"}[5m]))
+objective: 0.9995
+window: 30d
+labels:
+  team: payments
+  tier: "1"

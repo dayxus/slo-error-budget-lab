@@ -1,0 +1,56 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sloctl"
+version = "1.0.0"
+description = "SLI/SLO and error-budget engine: computes budgets and multi-window burn rates from declarative YAML and generates promtool-valid Prometheus rules."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Jeferson Melo" }]
+keywords = ["sre", "slo", "error-budget", "prometheus", "promql", "observability"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: System :: Monitoring",
+]
+dependencies = ["PyYAML>=6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.6"]
+
+[project.scripts]
+sloctl = "sloctl.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/dayxus/slo-error-budget-lab"
+Issues = "https://github.com/dayxus/slo-error-budget-lab/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sloctl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py39"
+exclude = [".venv", "build", "examples"]
+
+[tool.ruff.lint]
+# The package targets Python >= 3.9 (see requires-python), so the pyupgrade
+# rules that assume 3.10+ syntax (X | Y annotations, zip(strict=), typing.Dict
+# removal) are intentionally not enabled.
+select = ["E", "F", "I", "B", "W", "C4"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+
+[tool.coverage.run]
+source = ["sloctl"]
