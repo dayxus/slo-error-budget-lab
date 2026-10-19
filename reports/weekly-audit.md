@@ -3,11 +3,11 @@
 Produced by `scripts/weekly_audit.py` from the scheduled maintenance workflow.
 Everything below was executed in this run; nothing is carried over from a previous one.
 
-- Run (UTC): 2026-10-12T15:35:57Z
+- Run (UTC): 2026-10-19T13:27:21Z
 - `promtool` release in use: `v3.15.0`
 - `promtool check rules`: **success**
 - Generated rule files checked: 6
-- Test suite: 148 passed in 4.18s
+- Test suite: 148 passed in 2.76s
 - Coverage of `sloctl/`: 89%
 
 ## Upstream versions
