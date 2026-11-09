@@ -3,18 +3,18 @@
 Produced by `scripts/weekly_audit.py` from the scheduled maintenance workflow.
 Everything below was executed in this run; nothing is carried over from a previous one.
 
-- Run (UTC): 2026-11-02T16:06:55Z
-- `promtool` release in use: `v3.15.1`
+- Run (UTC): 2026-11-09T16:30:05Z
+- `promtool` release in use: `v3.16.0`
 - `promtool check rules`: **success**
 - Generated rule files checked: 6
-- Test suite: 148 passed in 4.31s
+- Test suite: 148 passed in 3.24s
 - Coverage of `sloctl/`: 89%
 
 ## Upstream versions
 
 | Component | Version |
 | --- | --- |
-| Prometheus | `v3.15.1` |
+| Prometheus | `v3.16.0` |
 | Alertmanager | `v0.34.2` |
 
 ## promtool output
