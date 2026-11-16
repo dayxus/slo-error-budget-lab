@@ -12,8 +12,8 @@ production.
 
 | Component | Latest release | Released | Last checked | Release notes |
 | --- | --- | --- | --- | --- |
-| Prometheus | `v3.16.0` | 2026-11-05 | 2026-11-09 | [prometheus/prometheus](https://github.com/prometheus/prometheus/releases/tag/v3.16.0) |
-| Alertmanager | `v0.34.2` | 2026-10-29 | 2026-11-09 | [prometheus/alertmanager](https://github.com/prometheus/alertmanager/releases/tag/v0.34.2) |
+| Prometheus | `v3.16.0` | 2026-11-05 | 2026-11-16 | [prometheus/prometheus](https://github.com/prometheus/prometheus/releases/tag/v3.16.0) |
+| Alertmanager | `v0.35.0` | 2026-11-09 | 2026-11-16 | [prometheus/alertmanager](https://github.com/prometheus/alertmanager/releases/tag/v0.35.0) |
 
 <!-- versions:end -->
 
